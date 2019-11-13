@@ -1,36 +1,138 @@
 <?php
+
 //header("Access-Control-Allow-Origin: *");
 include_once 'conn.php';
-class Product extends Dbconfig
-{
-	public function __construct()
-	{
-		parent::__construct();
-	}
-	
-	
-	public function listProducts()
-	{       $response=array();
-		$query = "select * from products order by id desc";		
-		if($result = mysqli_query($this->connection,$query))
-		{
-			$rowcount=mysqli_num_rows($result);
-			if($rowcount >0)
-			{   while ($row=mysqli_fetch_array($result,MYSQLI_ASSOC))
-				{
-					$productlist[]=$row;
-				}
-		        $response['products']=$productlist;
-		        $response['noRecords']=$rowcount;
-			}else{
-                      $response['noRecords']=0;}			
-		}
-		else{
-			$response['noRecords']=0;
-		}
-		return $response;
-		
-		
-	}
+
+class Product extends Dbconfig {
+
+    public function __construct() {
+        parent::__construct();
+    }
+
+    public function listProducts() {
+        $response = array();
+        $query = "select * from products order by id desc";
+        if ($result = mysqli_query($this->connection, $query)) {
+            $rowcount = mysqli_num_rows($result);
+            if ($rowcount > 0) {
+                while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+                    $productlist[] = $row;
+                }
+                $response['products'] = $productlist;
+                $response['noRecords'] = $rowcount;
+            } else {
+                $response['noRecords'] = 0;
+            }
+        } else {
+            $response['noRecords'] = 0;
+        }
+        return $response;
+    }
+
+    public function confirmOrder($data) {
+        $response = array();
+        $response['actionState'] = 0;
+        /* $userid=$data['userid']; */
+        /* $billing_email=$data['billing_email'];
+          $billing_name=$data['billing_name']; */
+        $shipping_name = $data['shipping_name'];
+        $shipping_email = $data['shipping_email'];
+        $shipping_address = $data['shipping_address'];
+        $order_items = $data['order_item'];
+        isset($data['userid']) ? $userid = $data['userid'] : $userid = 0;
+        isset($billing_email) ? $billing_email = $billing_email : $billing_email = "";
+        isset($billing_name) ? $billing_name = $billing_name : $billing_name = "";
+        isset($shipping_name) ? $shipping_name = $shipping_name : $shipping_name = "";
+        isset($shipping_email) ? $shipping_email = $shipping_email : $shipping_email = "";
+        isset($shipping_address) ? $shipping_address = $shipping_address : $shipping_address = "";
+        $createdon = date("Y-m-d h:i:s");
+        $insertQry = "INSERT INTO order_history (userid,billing_name,billing_email,shipping_name,shipping_email,shipping_address,createdon)
+        VALUES ('$userid','$billing_name', '$billing_email', '$shipping_name','$shipping_email','$shipping_address','$createdon')";
+        if (mysqli_query($this->connection, $insertQry)) {
+            $order_id = $this->connection->insert_id;
+
+            if (isset($order_items) && count($order_items) > 0) {
+                foreach ($order_items as $item) {
+                    $product_id = $item['produc_id'];
+                    $product_code = $item['product_code'];
+                    $quantity = $item['quantity'];
+                    $price = $item['price'];
+                    $insertQry2 = "INSERT INTO order_items(order_id,product_id,product_code,quantity,price)
+                     VALUES ('$order_id','$product_id', '$product_code', '$quantity','$price')";
+                    mysqli_query($this->connection, $insertQry2);
+                }
+            }
+
+            $response['orderstatus'] = "success";
+            $response['actionState'] = 1;
+        } else {
+            $response['orderstatus'] = "failed";
+        }
+        return $response;
+    }
+
+    public function myorders($userid) {
+        $response = $orders = $orderlistnew = array();
+        $query = "SELECT oh.* FROM `order_history` oh WHERE oh.userid=$userid";
+        if ($result = mysqli_query($this->connection, $query)) {
+            $rowcount = mysqli_num_rows($result);
+            if ($rowcount > 0) {
+                while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+                    $orderlist[] = $row;
+                }
+                if (!empty($orderlist)) {
+                    foreach ($orderlist as $k => $order) {
+                        $oid = $order['id'];
+                        $query2 = "SELECT oi.*,p.name,p.thumb FROM `order_items` oi join products p on oi.product_id=p.id WHERE oi.order_id=$oid";
+                        if ($result2 = mysqli_query($this->connection, $query2)) {
+                            while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+                                $orderlist[$k]['items'][] = $row2;
+                            }
+                        }
+                    }
+                    $response['orders'] = $orderlist;
+                }
+            } else {
+                $response['noRecords'] = 0;
+            }
+        } else {
+            $response['noRecords'] = 0;
+        }
+        return $response;
+    }
+    
+    public function orderDetail($orderid) {
+        $response = $orders = $orderdetail = array();
+        $query = "SELECT oi.*,oh.id as orderid,oh.createdon,oh.shipping_name,oh.shipping_email,oh.shipping_address,oh.shipping_mobile,p.name AS productname,p.thumb,CONCAT(u.fname ,' ' ,u.lname)AS username,u.email AS usermail FROM `order_items` oi JOIN `order_history` oh ON oi.order_id=oh.id JOIN products p ON oi.product_id=p.id JOIN users u ON oh.userid=u.id WHERE oi.order_id=$orderid";
+        if ($result = mysqli_query($this->connection, $query)) {
+            $rowcount = mysqli_num_rows($result);
+            if ($rowcount > 0) {
+                while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+                    $orderlist[] = $row;
+                }
+                
+                
+                if (!empty($orderlist)) {
+                    foreach ($orderlist as $k => $order) {
+                       $orderdetail[0]['orderid']=$order['orderid'];
+                       $orderdetail[0]['username']=$order['username'];
+                       $orderdetail[0]['usermail']=$order['usermail'];
+                       $orderdetail[0]['createdon']=$order['createdon'];
+                    }
+                    $orderdetail[0]['items']=$orderlist;
+                    
+                    //echo "<pre>";print_r($orderdetail);echo '</pre>';
+                    $response['order'] = $orderdetail;
+                }
+            } else {
+                $response['noRecords'] = 0;
+            }
+        } else {
+            $response['noRecords'] = 0;
+        }
+        return $response;
+    }
+
 }
+
 ?>
