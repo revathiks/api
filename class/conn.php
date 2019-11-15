@@ -6,7 +6,7 @@ class Dbconfig
 private $host="localhost";
 private $user="root";
 private $pass="";
-private $database="react_learn";
+private $database="mycart";
 public  $connection;
 public function __construct()
 {
