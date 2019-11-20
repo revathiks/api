@@ -11,7 +11,7 @@ class Product extends Dbconfig {
 
     public function listProducts() {
         $response = array();
-        $query = "select * from products order by id desc";
+        $query = "select * from products where status=1 order by id desc";
         if ($result = mysqli_query($this->connection, $query)) {
             $rowcount = mysqli_num_rows($result);
             if ($rowcount > 0) {
@@ -37,6 +37,8 @@ class Product extends Dbconfig {
           $billing_name=$data['billing_name']; */
         $shipping_name = $data['shipping_name'];
         $shipping_email = $data['shipping_email'];
+        $total = $data['total'];
+        $shipping_cost = $data['shipping_cost'];
         $shipping_address = $data['shipping_address'];
         $order_items = $data['order_item'];
         isset($data['userid']) ? $userid = $data['userid'] : $userid = 0;
@@ -46,8 +48,8 @@ class Product extends Dbconfig {
         isset($shipping_email) ? $shipping_email = $shipping_email : $shipping_email = "";
         isset($shipping_address) ? $shipping_address = $shipping_address : $shipping_address = "";
         $createdon = date("Y-m-d h:i:s");
-        $insertQry = "INSERT INTO order_history (userid,billing_name,billing_email,shipping_name,shipping_email,shipping_address,createdon)
-        VALUES ('$userid','$billing_name', '$billing_email', '$shipping_name','$shipping_email','$shipping_address','$createdon')";
+       $insertQry = "INSERT INTO order_history (userid,billing_name,billing_email,shipping_name,shipping_email,shipping_address,total,shipping_cost,createdon)
+        VALUES ('$userid','$billing_name', '$billing_email', '$shipping_name','$shipping_email','$shipping_address','$total','$shipping_cost','$createdon')";
         if (mysqli_query($this->connection, $insertQry)) {
             $order_id = $this->connection->insert_id;
 
@@ -105,7 +107,7 @@ class Product extends Dbconfig {
 
     public function orderDetail($orderid) {
         $response = $orders = $orderdetail = array();
-        $query = "SELECT oi.*,oh.id as orderid,oh.createdon,oh.shipping_name,oh.shipping_email,oh.shipping_address,oh.shipping_mobile,p.name AS productname,p.thumb,CONCAT(u.fname ,' ' ,u.lname)AS username,u.email AS usermail FROM `order_items` oi JOIN `order_history` oh ON oi.order_id=oh.id JOIN products p ON oi.product_id=p.id JOIN users u ON oh.userid=u.id WHERE oi.order_id=$orderid";
+        $query = "SELECT oi.*,oh.id as orderid,oh.createdon,oh.shipping_name,oh.status,oh.shipping_email,oh.shipping_address,oh.shipping_mobile,oh.total,oh.shipping_cost,p.name AS productname,p.thumb,CONCAT(u.fname ,' ' ,u.lname)AS username,u.email AS usermail FROM `order_items` oi JOIN `order_history` oh ON oi.order_id=oh.id JOIN products p ON oi.product_id=p.id JOIN users u ON oh.userid=u.id WHERE oi.order_id=$orderid";
         if ($result = mysqli_query($this->connection, $query)) {
             $rowcount = mysqli_num_rows($result);
             if ($rowcount > 0) {
@@ -119,8 +121,16 @@ class Product extends Dbconfig {
                         $orderdetail[0]['orderid'] = $order['orderid'];
                         $orderdetail[0]['username'] = $order['username'];
                         $orderdetail[0]['usermail'] = $order['usermail'];
+                        $orderdetail[0]['shipping_name'] = $order['shipping_name'];
+                        $orderdetail[0]['shipping_email'] = $order['shipping_email'];  
+                        $orderdetail[0]['shipping_address'] = $order['shipping_address'];  
+                        $orderdetail[0]['shipping_mobile'] = $order['shipping_mobile'];
+                         $orderdetail[0]['total'] = $order['total'];
+                         $orderdetail[0]['shipping_cost'] = $order['shipping_cost'];
+                          $orderdetail[0]['status'] = $order['status'];
                         $orderdetail[0]['createdon'] = $order['createdon'];
                     }
+                    
                     $orderdetail[0]['items'] = $orderlist;
 
                     //echo "<pre>";print_r($orderdetail);echo '</pre>';
@@ -231,6 +241,37 @@ class Product extends Dbconfig {
         } else {
             $response['updatestatus'] = "failed";
             $response['msg'] = "something went to wrong";
+        }
+        return $response;
+    }
+    
+    public function deleteProduct($id) {
+        $response = array();
+        $response['actionState'] = 0;
+        $updateQry = "update products set status=0 where id=".$id;             
+        if ($result = mysqli_query($this->connection, $updateQry)) {
+
+            $response['msg'] = "Product deleted successfully";
+            $response['status'] = 'success';
+            $response['actionState'] = 1;
+        } else {
+            $response['msg'] = "something went to wrong";
+            $response['status'] = 'failed';
+        }
+        return $response;
+    }
+    public function cancelOrder($id) {
+        $response = array();
+        $response['actionState'] = 0;
+        $updateQry = "update order_history set status='Cancelled' where id=".$id;             
+        if ($result = mysqli_query($this->connection, $updateQry)) {
+
+            $response['msg'] = "Order cancelled successfully";
+            $response['status'] = 'success';
+            $response['actionState'] = 1;
+        } else {
+            $response['msg'] = "something went to wrong";
+            $response['status'] = 'failed';
         }
         return $response;
     }

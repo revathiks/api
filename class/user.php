@@ -53,7 +53,7 @@ class User extends Dbconfig {
                 if (mysqli_query($this->connection, $insertQry)) {
 
                     $response['registerstatus'] = "success";
-                    $response['msg'] = "you have registered successfully";
+                    $response['msg'] = "you have registered successfully.Please login to continue shopping";
                     $response['actionState'] = 1;
                 } else {
                     $response['registerstatus'] = "failed";
