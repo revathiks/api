@@ -6,10 +6,14 @@
             <file>file:/E:/xampp/htdocs/react_services/api/userslist.php</file>
             <file>file:/E:/xampp/htdocs/react_services/class/user.php</file>
             <file>file:/E:/xampp/htdocs/react_services/api/myorders.php</file>
+            <file>file:/E:/xampp/htdocs/react_services/api/productupdate.php</file>
             <file>file:/E:/xampp/htdocs/react_services/api/confirmorder.php</file>
             <file>file:/E:/xampp/htdocs/react_services/api/products.php</file>
+            <file>file:/E:/xampp/htdocs/react_services/api/deleteproduct.php</file>
+            <file>file:/E:/xampp/htdocs/react_services/api/cancel.php</file>
             <file>file:/E:/xampp/htdocs/react_services/api/register.php</file>
             <file>file:/E:/xampp/htdocs/react_services/class/product.php</file>
+            <file>file:/E:/xampp/htdocs/react_services/api/delete.php</file>
         </group>
     </open-files>
 </project-private>

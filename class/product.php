@@ -214,6 +214,7 @@ class Product extends Dbconfig {
     }
     
     public function productupdate($data) {
+        $target_dir = "../uploads/products/";
         $response = array();
         $response['actionState'] = 0;
         $name = $data['name'];
@@ -225,7 +226,16 @@ class Product extends Dbconfig {
         if ($result = mysqli_query($this->connection, $query)) {
             $rowcount = mysqli_num_rows($result);
             if ($rowcount > 0) {
-               $updateQry = "update products set name='$name',code='$code',price='$price',description='$description' where id=" . $id;
+                if($_FILES["thumb"]["name"] != "")
+                {
+                    $target_file = $target_dir . basename($_FILES["thumb"]["name"]);
+                    $thumb = basename($_FILES["thumb"]["name"]);
+                    move_uploaded_file($_FILES["thumb"]["tmp_name"], $target_file);
+                    $updateQry = "update products set name='$name',code='$code',price='$price',description='$description',thumb='$thumb' where id=" . $id;
+             
+                }else{
+                 $updateQry = "update products set name='$name',code='$code',price='$price',description='$description' where id=" . $id;
+                }
                 if (mysqli_query($this->connection, $updateQry)) {
                     $response['updatestatus'] = "success";
                     $response['msg'] = "Product updated successfully";
